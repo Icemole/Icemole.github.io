@@ -36,8 +36,6 @@ function init() {
 }
 
 // Carga la escena con objetos.
-// TODO: describir vértices de la pinza en el
-// sentido contrario a las agujas del reloj.
 function loadScene() {
     // Declarar materiales.
     var material = new THREE.MeshBasicMaterial({color: "red", wireframe: true})
