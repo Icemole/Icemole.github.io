@@ -20,18 +20,6 @@ function resize() {
     renderer.setSize(window.innerWidth, window.innerHeight)
 
     let aspectRatio = window.innerWidth / window.innerHeight
-    // TODO: ????
-    // if (aspectRatio > 1) {
-    //     cameraTop.left = l * aspectRatio
-    //     cameraTop.right = r * aspectRatio
-    //     cameraTop.top = t
-    //     cameraTop.bottom = b
-    // } else {
-    //     cameraTop.left = l
-    //     cameraTop.right = r
-    //     cameraTop.top = t / aspectRatio
-    //     cameraTop.bottom = b / aspectRatio
-    // }
     cameraTop.updateProjectionMatrix()
 
     camera.aspect = aspectRatio
@@ -55,28 +43,28 @@ function init() {
     // Crear la cámara
     var aspectRatio = window.innerWidth / window.innerHeight
     // THREE.PerspectiveCamera(angulo_en_grados, aspect_ratio, near, far)
-    camera = new THREE.PerspectiveCamera(50, aspectRatio, 0.1, 1000)
+    camera = new THREE.PerspectiveCamera(50, aspectRatio, 0.1, 2000)
     angle = 90 * Math.PI / 180
     camera.position.set(300, 300, 300)
-    camera.lookAt(new THREE.Vector3(0, 100, 0))
     scene.add(camera)
+    
+    // Controlador de cámara.
+    cameraController = new THREE.OrbitControls(camera, renderer.domElement)
+    cameraController.target.set(0, 100, 0)
+    camera.lookAt(0, 100, 0)
 
     // Cámara de planta.
     cameraTop = new THREE.OrthographicCamera(l, r, t, b, n, f)
     cameraTop.position.set(0, 300, 0)
     cameraTop.lookAt(0, 0, 0)
-    // cameraTop.up.set(0, 0, -1)
+    
+    cameraTop.up = new THREE.Vector3(0, 0, -1)
 
-    // Controlador de cámara.
-    cameraController = new THREE.OrbitControls(camera, renderer.domElement)
-    cameraController.target.set(0, 100, 0)
-
+    
     window.addEventListener("resize", resize)
 }
 
 // Carga la escena con objetos.
-// TODO: describir vértices de la pinza en el
-// sentido contrario a las agujas del reloj.
 function loadScene() {
     // Declarar materiales.
     var material = new THREE.MeshBasicMaterial({color: "red", wireframe: true})
@@ -107,18 +95,18 @@ function loadScene() {
         // new THREE.Vector3(38, 15, 0),   // 9
         // new THREE.Vector3(38, 15, 2),   // 10
         // new THREE.Vector3(38, 5, 2)     // 11
-        new THREE.Vector3(0, -10, -2),     // 0
-        new THREE.Vector3(0, 10, -2),    // 1
+        new THREE.Vector3(0, -10, -2),  // 0
+        new THREE.Vector3(0, 10, -2),   // 1
         new THREE.Vector3(0, 10, 2),    // 2
-        new THREE.Vector3(0, -10, 2),     // 3
-        new THREE.Vector3(19, -10, -2),    // 4
-        new THREE.Vector3(19, 10, -2),   // 5
+        new THREE.Vector3(0, -10, 2),   // 3
+        new THREE.Vector3(19, -10, -2), // 4
+        new THREE.Vector3(19, 10, -2),  // 5
         new THREE.Vector3(19, 10, 2),   // 6
-        new THREE.Vector3(19, -10, 2),    // 7
-        new THREE.Vector3(38, -5, -1),    // 8
+        new THREE.Vector3(19, -10, 2),  // 7
+        new THREE.Vector3(38, -5, -1),  // 8
         new THREE.Vector3(38, 5, -1),   // 9
-        new THREE.Vector3(38, 5, 1),   // 10
-        new THREE.Vector3(38, -5, 1)     // 11
+        new THREE.Vector3(38, 5, 1),    // 10
+        new THREE.Vector3(38, -5, 1)    // 11
     )
     geometriaPinza.faces.push(
         // Cara trasera (lo más atrás)
