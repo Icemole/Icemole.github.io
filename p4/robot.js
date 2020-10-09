@@ -201,7 +201,6 @@ function loadScene() {
     // pinzaDer.position.z = -10
     // pinzaDer.rotation.x = 10
 
-
     // Construir la escena.
     scene.add(suelo)
     suelo.add(base)
@@ -234,7 +233,7 @@ function setupGUI() {
     gui = new dat.GUI()
 
     var menu = gui.addFolder("Control Robot")
-    var giroBa = menu.add(robotController, "giroBase", -180, 180, 1).name("Giro Base")
+    var giroBa = menu.add(robotController, "giroBase", -180, 180, 1).name("Giro Base").listen()
     giroBa.onChange(function(nuevaRotacion) {
         base.rotation.y = nuevaRotacion * Math.PI / 180
     })
@@ -252,8 +251,9 @@ function setupGUI() {
     })
     var giroPi = menu.add(robotController, "giroPinzas", -40, 220, 1).name("Giro Pinzas")
     giroPi.onChange(function(nuevaRotacion) {
-        pinzaIzq.rotation.x = nuevaRotacion * Math.PI / 180 + Math.PI / 2
-        pinzaDer.rotation.x = -nuevaRotacion * Math.PI / 180 + Math.PI / 2
+        // pinzaIzq.rotation.x = nuevaRotacion * Math.PI / 180 + Math.PI / 2
+        // pinzaDer.rotation.x = -nuevaRotacion * Math.PI / 180 + Math.PI / 2
+        mano.rotation.y = nuevaRotacion * Math.PI / 180
     })
     var sepPinzas = menu.add(robotController, "separacionPinzas", 0, 15, 1).name("Sep. Pinzas")
     sepPinzas.onChange(function(nuevaSeparacion) {
@@ -275,22 +275,33 @@ function update() {
     radians = robotController.giroBase * Math.PI / 180
     base.position.x += (Number(goStraight) - Number(goBackwards)) * Math.cos(radians)
     base.position.z += (Number(goBackwards) - Number(goStraight)) * Math.sin(radians)
-    base.position.z += (Number(turnRight) - Number(turnLeft)) * Math.cos(radians)
+    
+    cameraTop.position.x = base.position.x
+    cameraTop.position.z = base.position.z
 }
 
 function onKeyDown(event) {
     var keyCode = event.keyCode
+    var deltaAngle = 2.5
     if (keyCode == w) {
         goStraight = true
     }
     if (keyCode == a) {
         turnLeft = true
+        if (robotController.giroBase < 180) {
+            robotController.giroBase += deltaAngle
+            base.rotation.y += deltaAngle * Math.PI / 180
+        }
     }
     if (keyCode == s) {
         goBackwards = true
     }
     if (keyCode == d) {
         turnRight = true
+        if (robotController.giroBase > -180) {
+            robotController.giroBase -= deltaAngle
+            base.rotation.y -= deltaAngle * Math.PI / 180
+        }
     }
 }
 
