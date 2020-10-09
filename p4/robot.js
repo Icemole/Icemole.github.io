@@ -10,9 +10,23 @@ var cameraTop, r = 100, t = 100, l = -100, b = -100, n = 0.1, f = 500
 // Variables globales.
 var esferacubo, angulo = 0
 
+// GUI
+var gui
+
+// Controlador del robot
+var robotController
+
+// Partes del robot que interaccionan con los controles
+var base, brazo, antebrazo, mano, pinzaIzq, pinzaDer
+
+// Control del movimiento del robot
+var turnLeft = turnRight = goStraight = goBackwards = false
+var w = 87, a = 65, s = 83, d = 68
+
 // Acciones
 init()
 loadScene()
+setupGUI()
 render()
 
 function resize() {
@@ -43,28 +57,29 @@ function init() {
     // Crear la cámara
     var aspectRatio = window.innerWidth / window.innerHeight
     // THREE.PerspectiveCamera(angulo_en_grados, aspect_ratio, near, far)
-    camera = new THREE.PerspectiveCamera(50, aspectRatio, 0.1, 1000)
+    camera = new THREE.PerspectiveCamera(50, aspectRatio, 0.1, 2000)
     angle = 90 * Math.PI / 180
     camera.position.set(300, 300, 300)
-    camera.lookAt(new THREE.Vector3(0, 100, 0))
     scene.add(camera)
+    
+    // Controlador de cámara.
+    cameraController = new THREE.OrbitControls(camera, renderer.domElement)
+    cameraController.target.set(0, 100, 0)
+    camera.lookAt(0, 100, 0)
 
     // Cámara de planta.
     cameraTop = new THREE.OrthographicCamera(l, r, t, b, n, f)
     cameraTop.position.set(0, 300, 0)
     cameraTop.lookAt(0, 0, 0)
-    // cameraTop.up.set(0, 0, -1)
-
-    // Controlador de cámara.
-    cameraController = new THREE.OrbitControls(camera, renderer.domElement)
-    cameraController.target.set(0, 100, 0)
+    
+    cameraTop.up = new THREE.Vector3(0, 0, -1)
 
     window.addEventListener("resize", resize)
+    window.addEventListener("keydown", onKeyDown)
+    window.addEventListener("keyup", onKeyUp)
 }
 
 // Carga la escena con objetos.
-// TODO: describir vértices de la pinza en el
-// sentido contrario a las agujas del reloj.
 function loadScene() {
     // Declarar materiales.
     var material = new THREE.MeshBasicMaterial({color: "red", wireframe: true})
@@ -72,11 +87,11 @@ function loadScene() {
     // Declarar geometrías.
     var geometriaSuelo = new THREE.BoxGeometry(1000, 0, 1000)
     var geometriaBase = new THREE.CylinderGeometry(50, 50, 15)
-    var brazo = new THREE.Object3D()
+    brazo = new THREE.Object3D()
     var geometriaEje = new THREE.CylinderGeometry(20, 20, 18)
     var geometriaEsparrago = new THREE.BoxGeometry(18, 120, 12)
     var geometriaRotula = new THREE.SphereGeometry(20)
-    var antebrazo = new THREE.Object3D()
+    antebrazo = new THREE.Object3D()
     antebrazo.position.y = 120
     var geometriaDisco = new THREE.CylinderGeometry(22, 22, 6)
     var geometriaNervio = new THREE.BoxGeometry(4, 80, 4)
@@ -95,18 +110,18 @@ function loadScene() {
         // new THREE.Vector3(38, 15, 0),   // 9
         // new THREE.Vector3(38, 15, 2),   // 10
         // new THREE.Vector3(38, 5, 2)     // 11
-        new THREE.Vector3(0, -10, -2),     // 0
-        new THREE.Vector3(0, 10, -2),    // 1
+        new THREE.Vector3(0, -10, -2),  // 0
+        new THREE.Vector3(0, 10, -2),   // 1
         new THREE.Vector3(0, 10, 2),    // 2
-        new THREE.Vector3(0, -10, 2),     // 3
-        new THREE.Vector3(19, -10, -2),    // 4
-        new THREE.Vector3(19, 10, -2),   // 5
+        new THREE.Vector3(0, -10, 2),   // 3
+        new THREE.Vector3(19, -10, -2), // 4
+        new THREE.Vector3(19, 10, -2),  // 5
         new THREE.Vector3(19, 10, 2),   // 6
-        new THREE.Vector3(19, -10, 2),    // 7
-        new THREE.Vector3(38, -5, -1),    // 8
+        new THREE.Vector3(19, -10, 2),  // 7
+        new THREE.Vector3(38, -5, -1),  // 8
         new THREE.Vector3(38, 5, -1),   // 9
-        new THREE.Vector3(38, 5, 1),   // 10
-        new THREE.Vector3(38, -5, 1)     // 11
+        new THREE.Vector3(38, 5, 1),    // 10
+        new THREE.Vector3(38, -5, 1)    // 11
     )
     geometriaPinza.faces.push(
         // Cara trasera (lo más atrás)
@@ -145,7 +160,7 @@ function loadScene() {
     // Declarar objetos.
     // Objeto := geometría + material
     var suelo = new THREE.Mesh(geometriaSuelo, material)
-    var base = new THREE.Mesh(geometriaBase, material)
+    base = new THREE.Mesh(geometriaBase, material)
     var eje = new THREE.Mesh(geometriaEje, material)
     eje.rotation.x = Math.PI / 2
     var esparrago = new THREE.Mesh(geometriaEsparrago, material)
@@ -169,15 +184,17 @@ function loadScene() {
     nervio4.position.y = 40
     nervio4.position.x = -10
     nervio4.position.z = -10
-    var mano = new THREE.Mesh(geometriaMano, material)
+    mano = new THREE.Mesh(geometriaMano, material)
     mano.position.y = 80
     mano.rotation.x = Math.PI / 2
-    var pinzaIzq = new THREE.Mesh(geometriaPinza, material)
+
+    // Pinzas
+    pinzaIzq = new THREE.Mesh(geometriaPinza, material)
     pinzaIzq.rotation.x = Math.PI / 2
     pinzaIzq.position.x = 10
     pinzaIzq.position.y = -15
     // pinzaIzq.position.z = -10
-    var pinzaDer = new THREE.Mesh(geometriaPinza, material)
+    pinzaDer = new THREE.Mesh(geometriaPinza, material)
     pinzaDer.rotation.x = -Math.PI / 2
     pinzaDer.position.x = 10
     pinzaDer.position.y = 15
@@ -204,6 +221,47 @@ function loadScene() {
     scene.add(new THREE.AxesHelper(100))
 }
 
+function setupGUI() {
+    robotController = {
+        giroBase: 0,
+        giroBrazo: 0,
+        giroAntebrazoY: 0,
+        giroAntebrazoZ: 0,
+        giroPinzas: 0,
+        separacionPinzas: 15
+    }
+
+    gui = new dat.GUI()
+
+    var menu = gui.addFolder("Control Robot")
+    var giroBa = menu.add(robotController, "giroBase", -180, 180, 1).name("Giro Base")
+    giroBa.onChange(function(nuevaRotacion) {
+        base.rotation.y = nuevaRotacion * Math.PI / 180
+    })
+    var giroBr = menu.add(robotController, "giroBrazo", -45, 45, 1).name("Giro Brazo")
+    giroBr.onChange(function(nuevaRotacion) {
+        brazo.rotation.z = nuevaRotacion * Math.PI / 180
+    })
+    var giroAntebrY = menu.add(robotController, "giroAntebrazoY", -180, 180, 1).name("Giro Antebrazo Y")
+    giroAntebrY.onChange(function(nuevaRotacion) {
+        antebrazo.rotation.y = nuevaRotacion * Math.PI / 180
+    })
+    var giroAntebrZ = menu.add(robotController, "giroAntebrazoZ", -90, 90, 1).name("Giro Antebrazo Z")
+    giroAntebrZ.onChange(function(nuevaRotacion) {
+        antebrazo.rotation.z = nuevaRotacion * Math.PI / 180
+    })
+    var giroPi = menu.add(robotController, "giroPinzas", -40, 220, 1).name("Giro Pinzas")
+    giroPi.onChange(function(nuevaRotacion) {
+        pinzaIzq.rotation.x = nuevaRotacion * Math.PI / 180 + Math.PI / 2
+        pinzaDer.rotation.x = -nuevaRotacion * Math.PI / 180 + Math.PI / 2
+    })
+    var sepPinzas = menu.add(robotController, "separacionPinzas", 0, 15, 1).name("Sep. Pinzas")
+    sepPinzas.onChange(function(nuevaSeparacion) {
+        pinzaIzq.position.y = -nuevaSeparacion
+        pinzaDer.position.y = nuevaSeparacion
+    })
+}
+
 // Aplica cambios entre frames.
 // Orden usual: Escalado -> Rotación -> Traslación
 // Si se quiere alterar este orden:
@@ -214,7 +272,42 @@ function loadScene() {
 // ms.makeScale(x, y, z)
 // objeto.matrix = mt.multiply(ms) 
 function update() {
+    radians = robotController.giroBase * Math.PI / 180
+    base.position.x += (Number(goStraight) - Number(goBackwards)) * Math.cos(radians)
+    base.position.z += (Number(goBackwards) - Number(goStraight)) * Math.sin(radians)
+    base.position.z += (Number(turnRight) - Number(turnLeft)) * Math.cos(radians)
+}
 
+function onKeyDown(event) {
+    var keyCode = event.keyCode
+    if (keyCode == w) {
+        goStraight = true
+    }
+    if (keyCode == a) {
+        turnLeft = true
+    }
+    if (keyCode == s) {
+        goBackwards = true
+    }
+    if (keyCode == d) {
+        turnRight = true
+    }
+}
+
+function onKeyUp(event) {
+    var keyCode = event.keyCode
+    if (keyCode == w) {
+        goStraight = false
+    }
+    if (keyCode == a) {
+        turnLeft = false
+    }
+    if (keyCode == s) {
+        goBackwards = false
+    }
+    if (keyCode == d) {
+        turnRight = false
+    }
 }
 
 // Dibuja cada frame.
