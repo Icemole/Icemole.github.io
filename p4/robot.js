@@ -272,36 +272,40 @@ function setupGUI() {
 // ms.makeScale(x, y, z)
 // objeto.matrix = mt.multiply(ms) 
 function update() {
-    radians = robotController.giroBase * Math.PI / 180
-    base.position.x += (Number(goStraight) - Number(goBackwards)) * Math.cos(radians)
-    base.position.z += (Number(goBackwards) - Number(goStraight)) * Math.sin(radians)
+    var deltaRotation = 2.5
+    var deltaMovement = 2
+    var radians = robotController.giroBase * Math.PI / 180
+    base.position.x += (Number(goStraight) - Number(goBackwards)) * Math.cos(radians) * deltaMovement
+    base.position.z += (Number(goBackwards) - Number(goStraight)) * Math.sin(radians) * deltaMovement
     
     cameraTop.position.x = base.position.x
     cameraTop.position.z = base.position.z
+
+    
+    if (turnRight && robotController.giroBase > -180) {
+        robotController.giroBase -= deltaRotation
+        base.rotation.y -= deltaRotation * Math.PI / 180
+    }
+    if (turnLeft && robotController.giroBase < 180) {
+        robotController.giroBase += deltaRotation
+        base.rotation.y += deltaRotation * Math.PI / 180
+    }
 }
 
 function onKeyDown(event) {
     var keyCode = event.keyCode
-    var deltaAngle = 2.5
+
     if (keyCode == w) {
         goStraight = true
     }
     if (keyCode == a) {
         turnLeft = true
-        if (robotController.giroBase < 180) {
-            robotController.giroBase += deltaAngle
-            base.rotation.y += deltaAngle * Math.PI / 180
-        }
     }
     if (keyCode == s) {
         goBackwards = true
     }
     if (keyCode == d) {
         turnRight = true
-        if (robotController.giroBase > -180) {
-            robotController.giroBase -= deltaAngle
-            base.rotation.y -= deltaAngle * Math.PI / 180
-        }
     }
 }
 
