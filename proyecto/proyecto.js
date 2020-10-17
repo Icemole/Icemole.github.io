@@ -31,7 +31,9 @@ function init() {
 
     // Create the camera controller and link it to the camera
     cameraController = new THREE.OrbitControls(camera, renderer.domElement)
-    cameraController.target.set(0, 10, 0)
+    // cameraController.position.set(0, 10, 0)
+    cameraController.target.set(10, 10, 10)
+    // camera.lookAt(10, 10, 10)
 
     window.addEventListener("resize", resize)
 }
@@ -42,6 +44,10 @@ function loadScene() {
                 function(loadedModel) {
                     scene.add(loadedModel)
                 })
+    
+    let geometriaSuelo = new THREE.BoxGeometry(1000, 0, 1000)
+    let suelo = new THREE.Mesh(geometriaSuelo, material)
+    scene.add(suelo)
 }
 
 function render() {
