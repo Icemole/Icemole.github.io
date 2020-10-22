@@ -23,6 +23,11 @@ var base, brazo, antebrazo, mano, pinzaIzq, pinzaDer
 var turnLeft = turnRight = goStraight = goBackwards = false
 var w = 87, a = 65, s = 83, d = 68
 
+// Luces
+var luzFocal
+// Calidad de la sombra arrojada
+var shadowQuality
+
 // Acciones
 init()
 loadScene()
@@ -47,6 +52,7 @@ function init() {
     renderer.setSize(window.innerWidth, window.innerHeight)
     renderer.setClearColor(new THREE.Color(0xFFFFFF))
     renderer.autoClear = false
+    renderer.shadowMapEnabled = true
 
     // Añade el canvas declarado a algún contenedor existente en la página.
     document.getElementById("canvas").appendChild(renderer.domElement)
@@ -81,8 +87,21 @@ function init() {
 
 // Carga la escena con objetos.
 function loadScene() {
+    // Declarar texturas.
+    var texturaSuelo = new THREE.TextureLoader().load("texturas/paving_stones_color.jpg")
+    texturaSuelo.magFilter = THREE.LinearFilter
+    texturaSuelo.minFilter = THREE.LinearFilter
+    texturaSuelo.wrapS = texturaSuelo.wrapT = THREE.MirroredRepeatWrapping
+
+    var texturaBrillante = new THREE.TextureLoader().load("texturas/metal_color.jpg")
+    texturaSuelo.magFilter = THREE.LinearFilter
+    texturaSuelo.minFilter = THREE.LinearFilter
+    texturaSuelo.wrapS = texturaSuelo.wrapT = THREE.MirroredRepeatWrapping
+
     // Declarar materiales.
-    var material = new THREE.MeshBasicMaterial({color: "red", wireframe: true})
+    var materialSuelo = new THREE.MeshLambertMaterial({color: "white", map: texturaSuelo})
+    var materialMate = new THREE.MeshLambertMaterial({color: "red", shading: THREE.SmoothShading})
+    var materialBrillante = new THREE.MeshPhongMaterial({color: "white", specular: "white", shininess: 50, map: texturaBrillante})
 
     // Declarar geometrías.
     var geometriaSuelo = new THREE.BoxGeometry(1000, 0, 1000)
@@ -98,18 +117,6 @@ function loadScene() {
     var geometriaMano = new THREE.CylinderGeometry(15, 15, 40)
     const geometriaPinza = new THREE.Geometry()
     geometriaPinza.vertices.push(
-        // new THREE.Vector3(0, 0, 0),     // 0
-        // new THREE.Vector3(0, 20, 0),    // 1
-        // new THREE.Vector3(0, 20, 4),    // 2
-        // new THREE.Vector3(0, 0, 4),     // 3
-        // new THREE.Vector3(19, 0, 0),    // 4
-        // new THREE.Vector3(19, 20, 0),   // 5
-        // new THREE.Vector3(19, 20, 4),   // 6
-        // new THREE.Vector3(19, 0, 4),    // 7
-        // new THREE.Vector3(38, 5, 0),    // 8
-        // new THREE.Vector3(38, 15, 0),   // 9
-        // new THREE.Vector3(38, 15, 2),   // 10
-        // new THREE.Vector3(38, 5, 2)     // 11
         new THREE.Vector3(0, -10, -2),  // 0
         new THREE.Vector3(0, 10, -2),   // 1
         new THREE.Vector3(0, 10, 2),    // 2
@@ -125,29 +132,29 @@ function loadScene() {
     )
     geometriaPinza.faces.push(
         // Cara trasera (lo más atrás)
-        new THREE.Face3(0, 3, 1),
-        new THREE.Face3(1, 3, 2),
+        new THREE.Face3(0, 1, 3),
+        new THREE.Face3(1, 2, 3),
         // Atrás izquierda
         new THREE.Face3(0, 4, 1),
         new THREE.Face3(1, 4, 5),
         // Atrás abajo
-        new THREE.Face3(0, 4, 3),
-        new THREE.Face3(3, 4, 7),
+        new THREE.Face3(0, 3, 4),
+        new THREE.Face3(3, 7, 4),
         // Atrás derecha
-        new THREE.Face3(3, 6, 2),
-        new THREE.Face3(3, 7, 6),
+        new THREE.Face3(3, 2, 6),
+        new THREE.Face3(3, 6, 7),
         // Atrás arriba
-        new THREE.Face3(1, 5, 2),
-        new THREE.Face3(2, 5, 6),
+        new THREE.Face3(1, 5, 2, new Vector3(0, 1, 0)),
+        new THREE.Face3(2, 5, 6, new Vector3(0, 1, 0)),
         // Adelante izquierda
         new THREE.Face3(4, 8, 5),
         new THREE.Face3(5, 8, 9),
         // Adelante abajo
-        new THREE.Face3(4, 8, 7),
-        new THREE.Face3(7, 8, 11),
+        new THREE.Face3(4, 7, 8, new Vector3(0, -1, 0)),
+        new THREE.Face3(7, 11, 8, new Vector3(0, -1, 0)),
         // Adelante derecha
-        new THREE.Face3(7, 10, 6),
-        new THREE.Face3(7, 11, 10),
+        new THREE.Face3(7, 6, 10),
+        new THREE.Face3(7, 10, 11),
         // Adelante arriba
         new THREE.Face3(5, 9, 6),
         new THREE.Face3(6, 9, 10),
@@ -155,51 +162,87 @@ function loadScene() {
         new THREE.Face3(8, 10, 9),
         new THREE.Face3(8, 11, 10),
     )
-    geometriaPinza.computeFaceNormals()
+    // geometriaPinza.computeFaceNormals()
 
     // Declarar objetos.
     // Objeto := geometría + material
-    var suelo = new THREE.Mesh(geometriaSuelo, material)
-    base = new THREE.Mesh(geometriaBase, material)
-    var eje = new THREE.Mesh(geometriaEje, material)
+    var suelo = new THREE.Mesh(geometriaSuelo, materialSuelo)
+    suelo.receiveShadow = true
+
+    base = new THREE.Mesh(geometriaBase, materialMate)
+    base.castShadow = true
+    base.receiveShadow = true
+
+    var eje = new THREE.Mesh(geometriaEje, materialMate)
     eje.rotation.x = Math.PI / 2
-    var esparrago = new THREE.Mesh(geometriaEsparrago, material)
+    eje.castShadow = true
+    eje.receiveShadow = true
+
+    var esparrago = new THREE.Mesh(geometriaEsparrago, materialBrillante)
     esparrago.position.y = 60
-    var rotula = new THREE.Mesh(geometriaRotula, material)
+    esparrago.castShadow = true
+    esparrago.receiveShadow = true
+
+    var rotula = new THREE.Mesh(geometriaRotula, materialMate)
     rotula.position.y = 120
-    var disco = new THREE.Mesh(geometriaDisco, material)
-    var nervio1 = new THREE.Mesh(geometriaNervio, material)
+    rotula.castShadow = true
+    rotula.receiveShadow = true
+
+    var disco = new THREE.Mesh(geometriaDisco, materialMate)
+    disco.castShadow = true
+    disco.receiveShadow = true
+
+    var nervio1 = new THREE.Mesh(geometriaNervio, materialBrillante)
     nervio1.position.y = 40
     nervio1.position.x = 10
     nervio1.position.z = 10
-    var nervio2 = new THREE.Mesh(geometriaNervio, material)
+    nervio1.castShadow = true
+    nervio1.receiveShadow = true
+
+    var nervio2 = new THREE.Mesh(geometriaNervio, materialBrillante)
     nervio2.position.y = 40
     nervio2.position.x = 10
     nervio2.position.z = -10
-    var nervio3 = new THREE.Mesh(geometriaNervio, material)
+    nervio2.castShadow = true
+    nervio2.receiveShadow = true
+    
+    var nervio3 = new THREE.Mesh(geometriaNervio, materialBrillante)
     nervio3.position.y = 40
     nervio3.position.x = -10
     nervio3.position.z = 10
-    var nervio4 = new THREE.Mesh(geometriaNervio, material)
+    nervio3.castShadow = true
+    nervio3.receiveShadow = true
+    
+    var nervio4 = new THREE.Mesh(geometriaNervio, materialBrillante)
     nervio4.position.y = 40
     nervio4.position.x = -10
     nervio4.position.z = -10
-    mano = new THREE.Mesh(geometriaMano, material)
+    nervio4.castShadow = true
+    nervio4.receiveShadow = true
+    
+    mano = new THREE.Mesh(geometriaMano, materialMate)
     mano.position.y = 80
     mano.rotation.x = Math.PI / 2
-
+    mano.castShadow = true
+    mano.receiveShadow = true
+    
     // Pinzas
-    pinzaIzq = new THREE.Mesh(geometriaPinza, material)
+    pinzaIzq = new THREE.Mesh(geometriaPinza, materialBrillante)
     pinzaIzq.rotation.x = Math.PI / 2
     pinzaIzq.position.x = 10
     pinzaIzq.position.y = -15
+    pinzaIzq.castShadow = true
+    pinzaIzq.receiveShadow = true
     // pinzaIzq.position.z = -10
-    pinzaDer = new THREE.Mesh(geometriaPinza, material)
+
+    pinzaDer = new THREE.Mesh(geometriaPinza, materialBrillante)
     pinzaDer.rotation.x = -Math.PI / 2
     pinzaDer.position.x = 10
     pinzaDer.position.y = 15
     // pinzaDer.position.z = -10
     // pinzaDer.rotation.x = 10
+    pinzaDer.castShadow = true
+    pinzaDer.receiveShadow = true
 
     // Construir la escena.
     scene.add(suelo)
@@ -217,7 +260,28 @@ function loadScene() {
     antebrazo.add(mano)
     mano.add(pinzaIzq)
     mano.add(pinzaDer)
-    scene.add(new THREE.AxesHelper(100))
+
+    var luzAmbiental = new THREE.AmbientLight(0x606060)
+    scene.add(luzAmbiental)
+
+    var luzPuntual = new THREE.PointLight(0xA0A0A0)
+    luzPuntual.position.set(100, 300, 0)
+    scene.add(luzPuntual)
+
+    luzFocal = new THREE.SpotLight(0xFFFFFF)
+    luzFocal.position.set(0, 400, 200)
+    luzFocal.target.position.set(0, 0, 0)
+    luzFocal.castShadow = true
+    luzFocal.shadow.mapSize.width = 1024
+    luzFocal.shadow.mapSize.height = 1024
+    luzFocal.shadow.camera.near = 100
+    luzFocal.shadow.camera.far = 4000
+    luzFocal.shadow.camera.fov = 30
+    scene.add(luzFocal)
+    
+    var axes = new THREE.AxesHelper(100)
+    axes.position.y = 10
+    scene.add(axes)
 }
 
 function setupGUI() {
@@ -227,7 +291,8 @@ function setupGUI() {
         giroAntebrazoY: 0,
         giroAntebrazoZ: 0,
         giroPinzas: 0,
-        separacionPinzas: 15
+        separacionPinzas: 15,
+        shadowQuality: 1024
     }
 
     gui = new dat.GUI()
@@ -259,6 +324,11 @@ function setupGUI() {
     sepPinzas.onChange(function(nuevaSeparacion) {
         pinzaIzq.position.y = -nuevaSeparacion
         pinzaDer.position.y = nuevaSeparacion
+    })
+    var shadowQ = menu.add(robotController, "shadowQuality", 1, 2048, 1).name("Calidad Sombra")
+    shadowQ.onChange(function(nuevaCalidadSombra) {
+        luzFocal.shadow.mapSize.width = nuevaCalidadSombra
+        luzFocal.shadow.mapSize.height = nuevaCalidadSombra
     })
 }
 
