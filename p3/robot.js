@@ -83,44 +83,32 @@ function loadScene() {
     var geometriaMano = new THREE.CylinderGeometry(15, 15, 40)
     const geometriaPinza = new THREE.Geometry()
     geometriaPinza.vertices.push(
-        // new THREE.Vector3(0, 0, 0),     // 0
-        // new THREE.Vector3(0, 20, 0),    // 1
-        // new THREE.Vector3(0, 20, 4),    // 2
-        // new THREE.Vector3(0, 0, 4),     // 3
-        // new THREE.Vector3(19, 0, 0),    // 4
-        // new THREE.Vector3(19, 20, 0),   // 5
-        // new THREE.Vector3(19, 20, 4),   // 6
-        // new THREE.Vector3(19, 0, 4),    // 7
-        // new THREE.Vector3(38, 5, 0),    // 8
-        // new THREE.Vector3(38, 15, 0),   // 9
-        // new THREE.Vector3(38, 15, 2),   // 10
-        // new THREE.Vector3(38, 5, 2)     // 11
-        new THREE.Vector3(0, -10, -2),  // 0
-        new THREE.Vector3(0, 10, -2),   // 1
-        new THREE.Vector3(0, 10, 2),    // 2
-        new THREE.Vector3(0, -10, 2),   // 3
-        new THREE.Vector3(19, -10, -2), // 4
-        new THREE.Vector3(19, 10, -2),  // 5
-        new THREE.Vector3(19, 10, 2),   // 6
-        new THREE.Vector3(19, -10, 2),  // 7
-        new THREE.Vector3(38, -5, -1),  // 8
-        new THREE.Vector3(38, 5, -1),   // 9
-        new THREE.Vector3(38, 5, 1),    // 10
-        new THREE.Vector3(38, -5, 1)    // 11
+        new THREE.Vector3(0, -10, 2),  // 0
+        new THREE.Vector3(0, 10, 2),   // 1
+        new THREE.Vector3(0, 10, -2),    // 2
+        new THREE.Vector3(0, -10, -2),   // 3
+        new THREE.Vector3(19, -10, 2), // 4
+        new THREE.Vector3(19, 10, 2),  // 5
+        new THREE.Vector3(19, 10, -2),   // 6
+        new THREE.Vector3(19, -10, -2),  // 7
+        new THREE.Vector3(38, -5, 1),  // 8
+        new THREE.Vector3(38, 5, 1),   // 9
+        new THREE.Vector3(38, 5, -1),    // 10
+        new THREE.Vector3(38, -5, -1)    // 11
     )
     geometriaPinza.faces.push(
         // Cara trasera (lo más atrás)
-        new THREE.Face3(0, 3, 1),
-        new THREE.Face3(1, 3, 2),
+        new THREE.Face3(0, 1, 3),
+        new THREE.Face3(1, 2, 3),
         // Atrás izquierda
         new THREE.Face3(0, 4, 1),
         new THREE.Face3(1, 4, 5),
         // Atrás abajo
-        new THREE.Face3(0, 4, 3),
-        new THREE.Face3(3, 4, 7),
+        new THREE.Face3(0, 3, 4),
+        new THREE.Face3(3, 7, 4),
         // Atrás derecha
-        new THREE.Face3(3, 6, 2),
-        new THREE.Face3(3, 7, 6),
+        new THREE.Face3(3, 2, 6),
+        new THREE.Face3(3, 6, 7),
         // Atrás arriba
         new THREE.Face3(1, 5, 2),
         new THREE.Face3(2, 5, 6),
@@ -128,11 +116,11 @@ function loadScene() {
         new THREE.Face3(4, 8, 5),
         new THREE.Face3(5, 8, 9),
         // Adelante abajo
-        new THREE.Face3(4, 8, 7),
-        new THREE.Face3(7, 8, 11),
+        new THREE.Face3(4, 7, 8),
+        new THREE.Face3(7, 11, 8),
         // Adelante derecha
-        new THREE.Face3(7, 10, 6),
-        new THREE.Face3(7, 11, 10),
+        new THREE.Face3(7, 6, 10),
+        new THREE.Face3(7, 10, 11),
         // Adelante arriba
         new THREE.Face3(5, 9, 6),
         new THREE.Face3(6, 9, 10),
