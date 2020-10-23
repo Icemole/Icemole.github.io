@@ -10,11 +10,13 @@ var renderer, scene, camera
 var sceneWidthX, sceneWidthZ
 var scenery, mirrorScenery
 
-// Player variables
+// Player variables and constants (player states)
 var player, mirrorPlayer
 var left = false, right = false, straight = false, backwards = false
+const STATE_WALKING = 1, STATE_IDLE = 0
+var previousState
 var playerAngle = 0, playerSpeed = 10
-var mixers, actions, recentlyMoved = true  // Animation stuff
+var mixers, actions, animationWalking, animationIdle  // Animation stuff
 
 // FPS stats
 var stats
@@ -36,6 +38,7 @@ function init() {
     renderer.setPixelRatio( window.devicePixelRatio );
     renderer.setSize(window.innerWidth, window.innerHeight)
     renderer.setClearColor(new THREE.Color(0xCEF5F3))
+    renderer.shadowMapEnabled = true
     // renderer.autoClear = false  // Multiple cameras
 
     // Add the renderer to the canvas
@@ -90,52 +93,73 @@ function loadScene() {
     // verticalMirror.rotation.y = Math.PI / 2
     // scene.add(verticalMirror)
 
+    let textureLoader = new THREE.TextureLoader()
+    let playerTexture = textureLoader.load("modelos/minecraft-steve-threejs/Steve.png")
+    playerTexture.magFilter = THREE.LinearFilter
+    playerTexture.minFilter = THREE.LinearFilter
+
+
     let geometryHitboxVertical = new THREE.BoxGeometry(2, 8, 2)
     let geometryHitboxHorizontal = new THREE.BoxGeometry(1.25, 1.25, 8)
 
     player = new THREE.Object3D()
-    let floor = new THREE.Mesh(geometryFloor, materialFloor)
+    mirrorPlayer = new THREE.Object3D()
+    previousState = STATE_IDLE
     let gltfLoader = new THREE.GLTFLoader()
     gltfLoader.load("modelos/minecraft-steve-animated.glb",
                     function(loadedModel) {
-                        mixers = []
-                        actions = []
+                        animationWalking = []
+                        animationIdle = []
+                        mixer = new THREE.AnimationMixer(loadedModel.scene)
+                        idleIndex = walkingIndex = 0
                         for (i = 0; i < loadedModel.animations.length; i++) {
-                            mixers[i] = new THREE.AnimationMixer(loadedModel.scene)
-                            actions[i] = mixers[i].clipAction(loadedModel.animations[i])
-                            actions[i].clampWhenFinished = true
-                            actions[i].play()
+                            let clip = loadedModel.animations[i]
+                            if (clip.name.endsWith("idle")) {
+                                animationIdle[idleIndex] = mixer.clipAction(clip)
+                                animationIdle[idleIndex].clampWhenFinished = true
+                                animationIdle[idleIndex].play()  // First, play idle.
+                                idleIndex++
+                            } else {  // endsWith("walk")
+                                animationWalking[walkingIndex] = mixer.clipAction(clip)
+                                animationWalking[walkingIndex].clampWhenFinished = true
+                                walkingIndex++
+                            }
                         }
+                        loadedModel.scene.rotation.y = Math.PI
 
-                        player.add(loadedModel.scene)
-                        mirrorPlayer = player.clone()
+                        
+                        // player.add(loadedModel.scene)
+                        mirrorPlayer.add(loadedModel.scene)
+                        // mirrorPlayer = player.clone()
+                        
                         mirrorScenery.add(mirrorPlayer)
                     })
-    // let loader = new THREE.ObjectLoader()
-    // loader.load("modelos/minecraft-steve-threejs/minecraft-steve.json",
-    //             function(loadedModel) {
-    //                 // player.add(loadedModel)
-    //                 // mirrorPlayer = player.clone()
-    //                 // mirrorScenery.add(mirrorPlayer)
-    //             })
-    // let hitboxVertical = new THREE.Mesh(geometryHitboxVertical, materialFloor)
-    // hitboxVertical.position.y += 4.5
-    // let hitboxHorizontal = new THREE.Mesh(geometryHitboxHorizontal, materialFloor)
-    // hitboxHorizontal.position.y += 6
-    // player.add(hitboxVertical)
-    // player.add(hitboxHorizontal)
 
-    // scene.add(player)
-    // scene.add(floor)
+
+    let floor = new THREE.Mesh(geometryFloor, materialFloor)
+    floor.receiveShadow = true
     
     scenery = new THREE.Object3D()
     scenery.add(floor)
     mirrorScenery = scenery.clone()
     mirrorScenery.position.x = -200
+    
 
     scenery.add(player)
     scene.add(scenery)
     scene.add(mirrorScenery)
+
+    let ambientLight = new THREE.AmbientLight(0x606060)
+    scene.add(ambientLight)
+
+    let hemisphereLight = new THREE.HemisphereLight(0xFFFFFF, 0x444444, 1)
+    hemisphereLight.position.set(0, 50, 0)
+    scene.add(hemisphereLight)
+
+    let spotLight = new THREE.SpotLight(0xFFFFFF)
+    spotLight.position.set(player.position.x, 50, player.position.z)
+    spotLight.target.position.set(player.position.x, player.position.y, player.position.z)
+    scene.add(spotLight)
 }
 
 function render() {
@@ -162,9 +186,6 @@ function update() {
 
     player.position.x += (Number(backwards) - Number(straight)) * Math.cos(playerAngle) * delta * playerSpeed
     player.position.z += (Number(straight) - Number(backwards)) * Math.sin(playerAngle) * delta * playerSpeed
-    if (backwards || straight) {
-        recentlyMoved = true
-    }
 
     if (mirrorPlayer != null) {
         mirrorPlayer.rotation.y = -player.rotation.y + Math.PI
@@ -181,23 +202,32 @@ function update() {
 
     stats.update()
 
-    // Update the animations.
-    if (mixers) {
-        mixers[0].update(delta)
-        mixers[1].update(delta)
-        mixers[2].update(delta)
-        mixers[3].update(delta)
+    let currentState = Number(backwards || straight)
+    if (currentState != previousState) {
+        let animationToStop, animationToStart
+        if (currentState == STATE_IDLE) {
+            animationToStop = animationWalking
+            animationToStart = animationIdle
+        } else {  // currentState == STATE_WALKING
+            animationToStop = animationIdle
+            animationToStart = animationWalking
+        }
+
+        // https://github.com/mrdoob/three.js/blob/master/examples/webgl_animation_skinning_morph.html
+        // Stop the previous animation
+        for (i = 0; i < animationToStop.length; i++) {
+            animationToStop[i].fadeOut(0.5)
+        }
+        // Start the current animation
+        for (i = 0; i < animationToStop.length; i++) {
+            animationToStart[i].reset().setEffectiveTimeScale(1).setEffectiveWeight(1).fadeIn(0.5).play()
+        }
     }
-    if (!backwards && !straight && !recentlyMoved) {
-        recentlyMoved = false
-        mixers[0].fadeOut(1)
-        // mixers[0].reset().setEffectiveTimeScale(1).setEffectiveWeight(1).fadeIn(1).play()
-        mixers[1].fadeOut(1)
-        // mixers[1].reset().setEffectiveTimeScale(1).setEffectiveWeight(1).fadeIn(1).play()
-        mixers[2].fadeOut(1)
-        // mixers[2].reset().setEffectiveTimeScale(1).setEffectiveWeight(1).fadeIn(1).play()
-        mixers[3].fadeOut(1)
-        // mixers[3].reset().setEffectiveTimeScale(1).setEffectiveWeight(1).fadeIn(1).play()
+    previousState = currentState
+
+    // Update the animations.
+    if (mixer) {
+        mixer.update(delta)
     }
 }
 
