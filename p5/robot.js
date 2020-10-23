@@ -52,7 +52,8 @@ function init() {
     renderer.setSize(window.innerWidth, window.innerHeight)
     renderer.setClearColor(new THREE.Color(0xFFFFFF))
     renderer.autoClear = false
-    renderer.shadowMapEnabled = true
+    renderer.shadowMap.enabled = true
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap
 
     // Añade el canvas declarado a algún contenedor existente en la página.
     document.getElementById("canvas").appendChild(renderer.domElement)
@@ -63,7 +64,7 @@ function init() {
     // Crear la cámara
     var aspectRatio = window.innerWidth / window.innerHeight
     // THREE.PerspectiveCamera(angulo_en_grados, aspect_ratio, near, far)
-    camera = new THREE.PerspectiveCamera(50, aspectRatio, 0.1, 2000)
+    camera = new THREE.PerspectiveCamera(50, aspectRatio, 0.1, 10000)
     angle = 90 * Math.PI / 180
     camera.position.set(300, 300, 300)
     scene.add(camera)
@@ -87,48 +88,99 @@ function init() {
 
 // Carga la escena con objetos.
 function loadScene() {
+    // Declarar luces.
+    var luzAmbiental = new THREE.AmbientLight(0x202020)
+    scene.add(luzAmbiental)
+
+    var luzPuntual = new THREE.PointLight(0x606060)
+    luzPuntual.position.set(0, 300, 0)
+    scene.add(luzPuntual)
+
+    luzFocal = new THREE.SpotLight(0xFFFFFF)
+    
+    luzFocal.position.set(100, 300, 300)
+    luzFocal.target.position.set(0, 0, 0)
+    luzFocal.angle = Math.PI / 4
+    luzFocal.castShadow = true
+    luzFocal.shadow.mapSize.width = 1024
+    luzFocal.shadow.mapSize.height = 1024
+    console.log(luzFocal.shadow.camera)
+    // luzFocal.shadow.camera.left = -1000
+    // luzFocal.shadow.camera.right = 1000
+    // luzFocal.shadow.camera.top = -1000
+    // luzFocal.shadow.camera.bottom = 1000
+    // luzFocal.shadow.camera = new THREE.OrthographicCamera(-1000, 1000, 1000, -1000, 0.5, 10000);
+    luzFocal.shadow.camera.near = 1
+    luzFocal.shadow.camera.far = 2000
+    luzFocal.shadow.camera.fov = 30
+    
+    scene.add(luzFocal)
+    
+    var axes = new THREE.AxesHelper(100)
+    axes.position.y = 10
+    scene.add(axes)
+
     // Declarar texturas.
     var texturaSuelo = new THREE.TextureLoader().load("texturas/paving_stones_color.jpg")
     texturaSuelo.magFilter = THREE.LinearFilter
     texturaSuelo.minFilter = THREE.LinearFilter
     texturaSuelo.wrapS = texturaSuelo.wrapT = THREE.MirroredRepeatWrapping
 
+    var texturaMate = new THREE.TextureLoader().load("texturas/painted_metal_color.jpg")
+    texturaMate.magFilter = THREE.LinearFilter
+    texturaMate.minFilter = THREE.LinearFilter
+    texturaMate.wrapS = texturaMate.wrapT = THREE.RepeatWrapping
+    texturaMate.repeat = new THREE.Vector2(1, 5)
+
     var texturaBrillante = new THREE.TextureLoader().load("texturas/metal_color.jpg")
-    texturaSuelo.magFilter = THREE.LinearFilter
-    texturaSuelo.minFilter = THREE.LinearFilter
-    texturaSuelo.wrapS = texturaSuelo.wrapT = THREE.MirroredRepeatWrapping
+    texturaBrillante.magFilter = THREE.LinearFilter
+    texturaBrillante.minFilter = THREE.LinearFilter
+    texturaBrillante.wrapS = texturaBrillante.wrapT = THREE.RepeatWrapping
+    texturaBrillante.repeat = new THREE.Vector2(1, 5)
+
+    var texturaRotulaLoader = new THREE.CubeTextureLoader()
+    texturaRotulaLoader.setPath("texturas/cubic_texture/")
+    var fondo = texturaRotulaLoader.load(["posx.jpg", "negx.jpg", "posy.jpg", "negy.jpg", "posz.jpg", "negz.jpg"])
 
     // Declarar materiales.
-    var materialSuelo = new THREE.MeshLambertMaterial({color: "white", map: texturaSuelo})
-    var materialMate = new THREE.MeshLambertMaterial({color: "red", shading: THREE.SmoothShading})
-    var materialBrillante = new THREE.MeshPhongMaterial({color: "white", specular: "white", shininess: 50, map: texturaBrillante})
+    var materialSuelo = new THREE.MeshLambertMaterial({color: "white", flatShading: THREE.SmoothShading, map: texturaSuelo})
+    var materialMate = new THREE.MeshLambertMaterial({color: "white", flatShading: THREE.SmoothShading, map: texturaMate})
+    var materialBrillante = new THREE.MeshPhongMaterial({color: "white", specular: "white", shininess: 20, map: texturaBrillante})
+    var materialRotula = new THREE.MeshBasicMaterial({color: "white", envMap: fondo})
+
+    // Crear habitación.
+    var shader = THREE.ShaderLib.cube
+    shader.uniforms.tCube.value = fondo
+    var materialParedes = new THREE.ShaderMaterial({fragmentShader: shader.fragmentShader, vertexShader: shader.vertexShader, uniforms: shader.uniforms, depthWrite: false, side: THREE.BackSide})
+    var habitacion = new THREE.Mesh(new THREE.CubeGeometry(20000, 20000, 20000), materialParedes)
+    scene.add(habitacion)
 
     // Declarar geometrías.
-    var geometriaSuelo = new THREE.BoxGeometry(1000, 0, 1000)
-    var geometriaBase = new THREE.CylinderGeometry(50, 50, 15)
+    var geometriaSuelo = new THREE.PlaneGeometry(1000, 1000, 100, 100)
+    var geometriaBase = new THREE.CylinderGeometry(50, 50, 15, 40, 5)
     brazo = new THREE.Object3D()
-    var geometriaEje = new THREE.CylinderGeometry(20, 20, 18)
+    var geometriaEje = new THREE.CylinderGeometry(20, 20, 18, 20)
     var geometriaEsparrago = new THREE.BoxGeometry(18, 120, 12)
-    var geometriaRotula = new THREE.SphereGeometry(20)
+    var geometriaRotula = new THREE.SphereGeometry(20, 20, 20)
     antebrazo = new THREE.Object3D()
     antebrazo.position.y = 120
-    var geometriaDisco = new THREE.CylinderGeometry(22, 22, 6)
+    var geometriaDisco = new THREE.CylinderGeometry(22, 22, 6, 20)
     var geometriaNervio = new THREE.BoxGeometry(4, 80, 4)
-    var geometriaMano = new THREE.CylinderGeometry(15, 15, 40)
+    var geometriaMano = new THREE.CylinderGeometry(15, 15, 40, 20)
     const geometriaPinza = new THREE.Geometry()
     geometriaPinza.vertices.push(
-        new THREE.Vector3(0, -10, -2),  // 0
-        new THREE.Vector3(0, 10, -2),   // 1
-        new THREE.Vector3(0, 10, 2),    // 2
-        new THREE.Vector3(0, -10, 2),   // 3
-        new THREE.Vector3(19, -10, -2), // 4
-        new THREE.Vector3(19, 10, -2),  // 5
-        new THREE.Vector3(19, 10, 2),   // 6
-        new THREE.Vector3(19, -10, 2),  // 7
-        new THREE.Vector3(38, -5, -1),  // 8
-        new THREE.Vector3(38, 5, -1),   // 9
-        new THREE.Vector3(38, 5, 1),    // 10
-        new THREE.Vector3(38, -5, 1)    // 11
+        new THREE.Vector3(0, -10, 2),  // 0
+        new THREE.Vector3(0, 10, 2),   // 1
+        new THREE.Vector3(0, 10, -2),    // 2
+        new THREE.Vector3(0, -10, -2),   // 3
+        new THREE.Vector3(19, -10, 2), // 4
+        new THREE.Vector3(19, 10, 2),  // 5
+        new THREE.Vector3(19, 10, -2),   // 6
+        new THREE.Vector3(19, -10, -2),  // 7
+        new THREE.Vector3(38, -5, 1),  // 8
+        new THREE.Vector3(38, 5, 1),   // 9
+        new THREE.Vector3(38, 5, -1),    // 10
+        new THREE.Vector3(38, -5, -1)    // 11
     )
     geometriaPinza.faces.push(
         // Cara trasera (lo más atrás)
@@ -144,14 +196,14 @@ function loadScene() {
         new THREE.Face3(3, 2, 6),
         new THREE.Face3(3, 6, 7),
         // Atrás arriba
-        new THREE.Face3(1, 5, 2, new Vector3(0, 1, 0)),
-        new THREE.Face3(2, 5, 6, new Vector3(0, 1, 0)),
+        new THREE.Face3(1, 5, 2),
+        new THREE.Face3(2, 5, 6),
         // Adelante izquierda
         new THREE.Face3(4, 8, 5),
         new THREE.Face3(5, 8, 9),
         // Adelante abajo
-        new THREE.Face3(4, 7, 8, new Vector3(0, -1, 0)),
-        new THREE.Face3(7, 11, 8, new Vector3(0, -1, 0)),
+        new THREE.Face3(4, 7, 8),
+        new THREE.Face3(7, 11, 8),
         // Adelante derecha
         new THREE.Face3(7, 6, 10),
         new THREE.Face3(7, 10, 11),
@@ -162,65 +214,67 @@ function loadScene() {
         new THREE.Face3(8, 10, 9),
         new THREE.Face3(8, 11, 10),
     )
-    // geometriaPinza.computeFaceNormals()
+    geometriaPinza.computeFaceNormals()
 
     // Declarar objetos.
     // Objeto := geometría + material
     var suelo = new THREE.Mesh(geometriaSuelo, materialSuelo)
+    suelo.rotation.x = -Math.PI / 2
     suelo.receiveShadow = true
 
-    base = new THREE.Mesh(geometriaBase, materialMate)
+    base = new THREE.Mesh(geometriaBase, materialBrillante)
+    base.rotation.x = Math.PI / 2
     base.castShadow = true
     base.receiveShadow = true
 
-    var eje = new THREE.Mesh(geometriaEje, materialMate)
+    var eje = new THREE.Mesh(geometriaEje, materialBrillante)
     eje.rotation.x = Math.PI / 2
     eje.castShadow = true
     eje.receiveShadow = true
 
-    var esparrago = new THREE.Mesh(geometriaEsparrago, materialBrillante)
+    var esparrago = new THREE.Mesh(geometriaEsparrago, materialMate)
     esparrago.position.y = 60
     esparrago.castShadow = true
     esparrago.receiveShadow = true
 
-    var rotula = new THREE.Mesh(geometriaRotula, materialMate)
+    var rotula = new THREE.Mesh(geometriaRotula, materialRotula)
     rotula.position.y = 120
     rotula.castShadow = true
     rotula.receiveShadow = true
 
-    var disco = new THREE.Mesh(geometriaDisco, materialMate)
+    var disco = new THREE.Mesh(geometriaDisco, materialBrillante)
     disco.castShadow = true
     disco.receiveShadow = true
 
-    var nervio1 = new THREE.Mesh(geometriaNervio, materialBrillante)
+    var nervio1 = new THREE.Mesh(geometriaNervio, materialMate)
     nervio1.position.y = 40
     nervio1.position.x = 10
     nervio1.position.z = 10
     nervio1.castShadow = true
     nervio1.receiveShadow = true
 
-    var nervio2 = new THREE.Mesh(geometriaNervio, materialBrillante)
+    var nervio2 = new THREE.Mesh(geometriaNervio, materialMate)
     nervio2.position.y = 40
     nervio2.position.x = 10
     nervio2.position.z = -10
     nervio2.castShadow = true
     nervio2.receiveShadow = true
     
-    var nervio3 = new THREE.Mesh(geometriaNervio, materialBrillante)
+    var nervio3 = new THREE.Mesh(geometriaNervio, materialMate)
     nervio3.position.y = 40
     nervio3.position.x = -10
     nervio3.position.z = 10
     nervio3.castShadow = true
     nervio3.receiveShadow = true
     
-    var nervio4 = new THREE.Mesh(geometriaNervio, materialBrillante)
+    var nervio4 = new THREE.Mesh(geometriaNervio, materialMate)
     nervio4.position.y = 40
     nervio4.position.x = -10
     nervio4.position.z = -10
     nervio4.castShadow = true
     nervio4.receiveShadow = true
     
-    mano = new THREE.Mesh(geometriaMano, materialMate)
+    mano = new THREE.Mesh(geometriaMano, materialBrillante)
     mano.position.y = 80
     mano.rotation.x = Math.PI / 2
     mano.castShadow = true
@@ -260,28 +314,6 @@ function loadScene() {
     antebrazo.add(mano)
     mano.add(pinzaIzq)
     mano.add(pinzaDer)
-
-    var luzAmbiental = new THREE.AmbientLight(0x606060)
-    scene.add(luzAmbiental)
-
-    var luzPuntual = new THREE.PointLight(0xA0A0A0)
-    luzPuntual.position.set(100, 300, 0)
-    scene.add(luzPuntual)
-
-    luzFocal = new THREE.SpotLight(0xFFFFFF)
-    luzFocal.position.set(0, 400, 200)
-    luzFocal.target.position.set(0, 0, 0)
-    luzFocal.castShadow = true
-    luzFocal.shadow.mapSize.width = 1024
-    luzFocal.shadow.mapSize.height = 1024
-    luzFocal.shadow.camera.near = 100
-    luzFocal.shadow.camera.far = 4000
-    luzFocal.shadow.camera.fov = 30
-    scene.add(luzFocal)
-    
-    var axes = new THREE.AxesHelper(100)
-    axes.position.y = 10
-    scene.add(axes)
 }
 
 function setupGUI() {
@@ -346,10 +378,13 @@ function update() {
     var deltaMovement = 2
     var radians = robotController.giroBase * Math.PI / 180
     base.position.x += (Number(goStraight) - Number(goBackwards)) * Math.cos(radians) * deltaMovement
-    base.position.z += (Number(goBackwards) - Number(goStraight)) * Math.sin(radians) * deltaMovement
+    base.position.y += (Number(goStraight) - Number(goBackwards)) * Math.sin(radians) * deltaMovement
+    // El robot está rotado para ser bien puesto en el suelo,
+    // por eso no hay que cambiar la coordenada z sino la y
     
     cameraTop.position.x = base.position.x
-    cameraTop.position.z = base.position.z
+    cameraTop.position.z = -base.position.y
+    // Más cosas raras por el hecho de que el robot esté rotado.
     
     if (turnRight && robotController.giroBase > -180) {
         robotController.giroBase -= deltaRotation
