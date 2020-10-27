@@ -57,9 +57,7 @@ function init() {
     cameraTop = new THREE.OrthographicCamera(l, r, t, b, n, f)
     cameraTop.position.set(0, 300, 0)
     cameraTop.lookAt(0, 0, 0)
-    
     cameraTop.up = new THREE.Vector3(0, 0, -1)
-
     
     window.addEventListener("resize", resize)
 }
@@ -189,7 +187,6 @@ function loadScene() {
     antebrazo.add(mano)
     mano.add(pinzaIzq)
     mano.add(pinzaDer)
-    scene.add(new THREE.AxesHelper(100))
 }
 
 // Aplica cambios entre frames.

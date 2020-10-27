@@ -80,6 +80,7 @@ function init() {
     cameraTop.lookAt(0, 0, 0)
     
     cameraTop.up = new THREE.Vector3(0, 0, -1)
+    cameraTop.rotation.z = -Math.PI / 2
 
     window.addEventListener("resize", resize)
     window.addEventListener("keydown", onKeyDown)
@@ -114,10 +115,6 @@ function loadScene() {
     luzFocal.shadow.camera.fov = 30
     
     scene.add(luzFocal)
-    
-    var axes = new THREE.AxesHelper(100)
-    axes.position.y = 10
-    scene.add(axes)
 
     // Declarar texturas.
     var texturaSuelo = new THREE.TextureLoader().load("texturas/paving_stones_color.jpg")
@@ -155,7 +152,7 @@ function loadScene() {
     scene.add(habitacion)
 
     // Declarar geometrías.
-    var geometriaSuelo = new THREE.PlaneGeometry(1000, 1000, 100, 100)
+    var geometriaSuelo = new THREE.BoxGeometry(1000, 0, 1000, 100, 0, 100)
     var geometriaBase = new THREE.CylinderGeometry(50, 50, 15, 40, 5)
     brazo = new THREE.Object3D()
     var geometriaEje = new THREE.CylinderGeometry(20, 20, 18, 20)
@@ -218,11 +215,11 @@ function loadScene() {
     // Declarar objetos.
     // Objeto := geometría + material
     var suelo = new THREE.Mesh(geometriaSuelo, materialSuelo)
-    suelo.rotation.x = -Math.PI / 2
+    // suelo.rotation.x = -Math.PI / 2
     suelo.receiveShadow = true
 
     base = new THREE.Mesh(geometriaBase, materialBrillante)
-    base.rotation.x = Math.PI / 2
+    // base.rotation.x = Math.PI / 2
     base.castShadow = true
     base.receiveShadow = true
 
@@ -353,8 +350,8 @@ function setupGUI() {
     })
     var sepPinzas = menu.add(robotController, "separacionPinzas", 0, 15, 1).name("Sep. Pinzas")
     sepPinzas.onChange(function(nuevaSeparacion) {
-        pinzaIzq.position.y = -nuevaSeparacion
-        pinzaDer.position.y = nuevaSeparacion
+        pinzaIzq.rotation.y = (15 - nuevaSeparacion) * Math.PI / 180
+        pinzaDer.rotation.y = (15 - nuevaSeparacion) * Math.PI / 180
     })
     var shadowQ = menu.add(robotController, "shadowQuality", 1, 2048, 1).name("Calidad Sombra")
     shadowQ.onChange(function(nuevaCalidadSombra) {
@@ -377,22 +374,24 @@ function update() {
     var deltaMovement = 2
     var radians = robotController.giroBase * Math.PI / 180
     base.position.x += (Number(goStraight) - Number(goBackwards)) * Math.cos(radians) * deltaMovement
-    base.position.y += (Number(goStraight) - Number(goBackwards)) * Math.sin(radians) * deltaMovement
+    base.position.z += (Number(goBackwards) - Number(goStraight)) * Math.sin(radians) * deltaMovement
     // El robot está rotado para estar bien puesto en el suelo,
     // por eso no hay que cambiar la coordenada z sino la y
+    base.position.z += (Number(turnRight) - Number(turnLeft)) * Math.cos(radians) * deltaMovement
+    base.position.x += (Number(turnRight) - Number(turnLeft)) * Math.sin(radians) * deltaMovement
     
     // cameraTop.position.x = base.position.x
     // cameraTop.position.z = -base.position.y
     // Más cosas raras por el hecho de que el robot esté rotado.
     
-    if (turnRight && robotController.giroBase > -180) {
-        robotController.giroBase -= deltaRotation
-        base.rotation.y -= deltaRotation * Math.PI / 180
-    }
-    if (turnLeft && robotController.giroBase < 180) {
-        robotController.giroBase += deltaRotation
-        base.rotation.y += deltaRotation * Math.PI / 180
-    }
+    // if (turnRight && robotController.giroBase > -180) {
+    //     robotController.giroBase -= deltaRotation
+    //     base.rotation.y -= deltaRotation * Math.PI / 180
+    // }
+    // if (turnLeft && robotController.giroBase < 180) {
+    //     robotController.giroBase += deltaRotation
+    //     base.rotation.y += deltaRotation * Math.PI / 180
+    // }
 }
 
 function onKeyDown(event) {

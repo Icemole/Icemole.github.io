@@ -29,9 +29,9 @@ function init() {
     var aspectRatio = window.innerWidth / window.innerHeight
     // THREE.PerspectiveCamera(angulo_en_grados, aspect_ratio, near, far)
     camera = new THREE.PerspectiveCamera(50, aspectRatio, 0.1, 1000)
-    angle = 90 * Math.PI / 180
-    camera.position.set(20 * Math.sin(angle), 300, 20 * Math.cos(angle))
-    camera.lookAt(new THREE.Vector3(0, 100, 0))
+    // angle = 90 * Math.PI / 180
+    camera.position.set(200, 300, 200)
+    camera.lookAt(0, 100, 0)
     scene.add(camera)
 }
 
@@ -160,7 +160,6 @@ function loadScene() {
     antebrazo.add(mano)
     mano.add(pinzaIzq)
     mano.add(pinzaDer)
-    scene.add(new THREE.AxesHelper(100))
 }
 
 // Aplica cambios entre frames.

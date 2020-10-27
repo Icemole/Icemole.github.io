@@ -73,6 +73,7 @@ function init() {
     cameraTop.lookAt(0, 0, 0)
     
     cameraTop.up = new THREE.Vector3(0, 0, -1)
+    cameraTop.rotation.z = -Math.PI / 2
 
     window.addEventListener("resize", resize)
     window.addEventListener("keydown", onKeyDown)
@@ -205,7 +206,6 @@ function loadScene() {
     antebrazo.add(mano)
     mano.add(pinzaIzq)
     mano.add(pinzaDer)
-    scene.add(new THREE.AxesHelper(100))
 }
 
 function setupGUI() {
@@ -245,8 +245,8 @@ function setupGUI() {
     })
     var sepPinzas = menu.add(robotController, "separacionPinzas", 0, 15, 1).name("Sep. Pinzas")
     sepPinzas.onChange(function(nuevaSeparacion) {
-        pinzaIzq.position.y = -nuevaSeparacion
-        pinzaDer.position.y = nuevaSeparacion
+        pinzaIzq.rotation.y = (15 - nuevaSeparacion) * Math.PI / 180
+        pinzaDer.rotation.y = (15 - nuevaSeparacion) * Math.PI / 180
     })
 }
 
@@ -260,22 +260,28 @@ function setupGUI() {
 // ms.makeScale(x, y, z)
 // objeto.matrix = mt.multiply(ms) 
 function update() {
-    var deltaRotation = 2.5
+    // var deltaRotation = 2.5
     var deltaMovement = 2
     var radians = robotController.giroBase * Math.PI / 180
     base.position.x += (Number(goStraight) - Number(goBackwards)) * Math.cos(radians) * deltaMovement
     base.position.z += (Number(goBackwards) - Number(goStraight)) * Math.sin(radians) * deltaMovement
+    // base.position.x += (Number(turnRight) - Number(turnLeft)) * Math.sin(radians) * deltaMovement
+    // base.position.z += Number(turnLeft) * Math.cos(radians) * deltaMovement
+    base.position.z += (Number(turnRight) - Number(turnLeft)) * Math.cos(radians) * deltaMovement
+    base.position.x += (Number(turnRight) - Number(turnLeft)) * Math.sin(radians) * deltaMovement
+    // base.position.x += -Number(turnRight) * deltaMovement
+    
     // cameraTop.position.x = base.position.x
     // cameraTop.position.z = base.position.z
     
-    if (turnRight && robotController.giroBase > -180) {
-        robotController.giroBase -= deltaRotation
-        base.rotation.y -= deltaRotation * Math.PI / 180
-    }
-    if (turnLeft && robotController.giroBase < 180) {
-        robotController.giroBase += deltaRotation
-        base.rotation.y += deltaRotation * Math.PI / 180
-    }
+    // if (turnRight && robotController.giroBase > -180) {
+    //     robotController.giroBase -= deltaRotation
+    //     base.rotation.y -= deltaRotation * Math.PI / 180
+    // }
+    // if (turnLeft && robotController.giroBase < 180) {
+    //     robotController.giroBase += deltaRotation
+    //     base.rotation.y += deltaRotation * Math.PI / 180
+    // }
 }
 
 function onKeyDown(event) {
