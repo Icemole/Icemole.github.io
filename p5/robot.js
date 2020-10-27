@@ -104,7 +104,6 @@ function loadScene() {
     luzFocal.castShadow = true
     luzFocal.shadow.mapSize.width = 1024
     luzFocal.shadow.mapSize.height = 1024
-    console.log(luzFocal.shadow.camera)
     // luzFocal.shadow.camera.left = -1000
     // luzFocal.shadow.camera.right = 1000
     // luzFocal.shadow.camera.top = -1000
