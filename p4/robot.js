@@ -265,10 +265,8 @@ function update() {
     var radians = robotController.giroBase * Math.PI / 180
     base.position.x += (Number(goStraight) - Number(goBackwards)) * Math.cos(radians) * deltaMovement
     base.position.z += (Number(goBackwards) - Number(goStraight)) * Math.sin(radians) * deltaMovement
-    
-    cameraTop.position.x = base.position.x
-    cameraTop.position.z = base.position.z
-
+    // cameraTop.position.x = base.position.x
+    // cameraTop.position.z = base.position.z
     
     if (turnRight && robotController.giroBase > -180) {
         robotController.giroBase -= deltaRotation

@@ -378,11 +378,11 @@ function update() {
     var radians = robotController.giroBase * Math.PI / 180
     base.position.x += (Number(goStraight) - Number(goBackwards)) * Math.cos(radians) * deltaMovement
     base.position.y += (Number(goStraight) - Number(goBackwards)) * Math.sin(radians) * deltaMovement
-    // El robot está rotado para ser bien puesto en el suelo,
+    // El robot está rotado para estar bien puesto en el suelo,
     // por eso no hay que cambiar la coordenada z sino la y
     
-    cameraTop.position.x = base.position.x
-    cameraTop.position.z = -base.position.y
+    // cameraTop.position.x = base.position.x
+    // cameraTop.position.z = -base.position.y
     // Más cosas raras por el hecho de que el robot esté rotado.
     
     if (turnRight && robotController.giroBase > -180) {
