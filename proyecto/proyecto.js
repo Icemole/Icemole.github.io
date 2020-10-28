@@ -18,6 +18,7 @@ var previousState
 var playerAngle = 0, playerSpeed = 10, playerSpeedSprinting = 20
 var mixer, animationWalking, animationIdle  // Animation stuff
 var flashLight
+var gotAchievementOneBlock = false, gotAchievementTenBlocks = false
 
 // Environment variables
 var pickaxe, informationPanel, miningCube  //, spotLight
@@ -509,12 +510,14 @@ function update() {
     }
 
     // Little achievement to celebrate 1 block mined
-    if (counter == 1) {
+    if (!gotAchievementOneBlock && counter == 1) {
+        gotAchievementOneBlock = true
         createAchievement("Cazador de cubos")
     }
 
     // Little achievement to celebrate 20 blocks mined
-    if (counter == 10) {
+    if (!gotAchievementTenBlocks && counter == 10) {
+        gotAchievementTenBlocks = true
         createAchievement("Cinco minutos más, mamá...")
     }
 
