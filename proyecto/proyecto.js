@@ -23,7 +23,7 @@ var gotAchievementOneBlock = false, gotAchievementTenBlocks = false
 // Environment variables
 var pickaxe, informationPanel, miningCube  //, spotLight
 var counter, counterDiv
-var trees = [], treeModel, treeMixers, treeAnimations, numTrees = 6, treeId = 0
+var trees = [], treeModel, treeMixers, treeAnimations, numTrees = 12, treeId = 0
 var clouds = [], cloudMaterial, cloudGeometry
 var environment
 
