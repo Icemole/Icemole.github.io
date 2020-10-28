@@ -90,7 +90,8 @@ function init() {
 
 function loadScene() {
     cloudMaterial = new THREE.MeshLambertMaterial({color: "white", opacity: 0.75, transparent: true})
-    cloudGeometry = new THREE.SphereGeometry(20)
+    // cloudGeometry = new THREE.SphereGeometry(20)
+    cloudGeometry = new THREE.CubeGeometry(20, 20, 20)
     addCloud()
     // Añadir una nube cada [5, 15] segundos
     setInterval(function() {
